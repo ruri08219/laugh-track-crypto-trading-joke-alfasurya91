@@ -12,6 +12,11 @@ Judge criteria, in order:
 Pattern: ONE concrete scene (made a profit, then checked the gas fees) +
 ONE reversal (the blockchain kept the profit) + ONE landing final line
 ("I kept the screenshot").
+
+Hardening (revise): validate() proves UTF-8 encodability before any
+write, so a lone/unpaired surrogate exits 1 cleanly instead of raising
+a mid-write UnicodeEncodeError traceback; a UTF-8 byte-length bound
+(4 bytes per char max) guards the output size as well.
 """
 
 import os
@@ -29,6 +34,12 @@ def validate(text):
         raise SystemExit("entry must be a single line")
     if any(ord(c) < 0x20 for c in text):
         raise SystemExit("entry contains a control character")
+    try:
+        encoded = text.encode("utf-8")
+    except UnicodeEncodeError:
+        raise SystemExit("entry is not valid UTF-8")
+    if len(encoded) > MAX_CHARS * 4:
+        raise SystemExit("entry exceeds UTF-8 byte limit")
     return text
 
 
